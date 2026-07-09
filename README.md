@@ -45,9 +45,8 @@ tests/
   Rag.Api.IntegrationTests
 
 docs/
-  Architecture/   System overview
+  Architecture/   C4 model and system overview
   ADR/            Architectural decision records
-  Diagrams/       Mermaid diagrams
 ```
 
 ## Documentation
