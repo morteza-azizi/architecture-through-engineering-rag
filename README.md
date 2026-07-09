@@ -1,0 +1,59 @@
+# Architecture Through Engineering – RAG
+
+A production-oriented Retrieval-Augmented Generation (RAG) reference implementation in .NET 10, built to teach architecture through working software.
+
+**Milestone 1** runs entirely on a developer machine. **Milestone 2** will swap local infrastructure for Azure services without changing Domain or Application layers.
+
+## Prerequisites
+
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- Docker (optional, for containerized runs)
+
+## Quick start
+
+```bash
+dotnet restore
+dotnet build
+dotnet test
+dotnet run --project src/Rag.Api
+```
+
+- Health check: `GET /health`
+- Swagger UI (Development): `https://localhost:<port>/swagger`
+- Upload document: `POST /api/documents` (multipart, `.txt` or `.md` only)
+- Get document metadata: `GET /api/documents/{id}`
+
+### Local infrastructure
+
+```bash
+docker compose up -d   # starts Qdrant (used in later slices)
+```
+
+## Solution structure
+
+```text
+src/
+  Rag.Domain              Business concepts
+  Rag.Application         Use cases and abstractions (ports)
+  Rag.Infrastructure      Shared infrastructure contracts
+  Rag.Infrastructure.Local  Milestone 1 local implementations
+  Rag.Api                 HTTP API (composition root)
+
+tests/
+  Rag.Application.Tests
+  Rag.Infrastructure.Tests
+  Rag.Api.IntegrationTests
+
+docs/
+  Architecture/   C4 model and system overview
+  ADR/            Architectural decision records
+```
+
+## Documentation
+
+- [Architecture overview](docs/Architecture/overview.md)
+- [ADR 001: Clean Architecture layering](docs/ADR/001-clean-architecture-layering.md)
+
+## Development approach
+
+Features are delivered incrementally. Each slice includes architectural intent, trade-offs, implementation, and review before moving on.
