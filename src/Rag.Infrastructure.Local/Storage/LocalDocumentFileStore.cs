@@ -26,19 +26,37 @@ public sealed class LocalDocumentFileStore : IDocumentFileStore
         CancellationToken cancellationToken = default)
     {
         var documentDirectory = GetDocumentDirectory(documentId);
+        var destinationPath = GetSafeDestinationPath(documentDirectory, fileName);
         Directory.CreateDirectory(documentDirectory);
 
-        var destinationPath = Path.Combine(documentDirectory, fileName);
+        try
+        {
+            await using var fileStream = new FileStream(
+                destinationPath,
+                FileMode.Create,
+                FileAccess.Write,
+                FileShare.None,
+                bufferSize: 4096,
+                useAsync: true);
 
-        await using var fileStream = new FileStream(
-            destinationPath,
-            FileMode.Create,
-            FileAccess.Write,
-            FileShare.None,
-            bufferSize: 4096,
-            useAsync: true);
+            await content.CopyToAsync(fileStream, cancellationToken);
+        }
+        catch
+        {
+            try
+            {
+                File.Delete(destinationPath);
+            }
+            catch (Exception cleanupException)
+            {
+                _logger.LogError(
+                    cleanupException,
+                    "Failed to remove partial file for document {DocumentId}",
+                    documentId);
+            }
 
-        await content.CopyToAsync(fileStream, cancellationToken);
+            throw;
+        }
 
         _logger.LogDebug(
             "Stored document file {DocumentId} at {Path}",
@@ -69,6 +87,44 @@ public sealed class LocalDocumentFileStore : IDocumentFileStore
         return Task.FromResult(stream);
     }
 
+    public Task DeleteAsync(Guid documentId, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var documentDirectory = GetDocumentDirectory(documentId);
+        if (Directory.Exists(documentDirectory))
+        {
+            Directory.Delete(documentDirectory, recursive: true);
+            _logger.LogDebug("Deleted stored files for document {DocumentId}", documentId);
+        }
+
+        return Task.CompletedTask;
+    }
+
     private string GetDocumentDirectory(Guid documentId) =>
         Path.Combine(_basePath, "documents", documentId.ToString());
+
+    private static string GetSafeDestinationPath(string documentDirectory, string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName)
+            || Path.IsPathRooted(fileName)
+            || fileName.IndexOfAny(['/', '\\', '\0']) >= 0
+            || !string.Equals(fileName, Path.GetFileName(fileName), StringComparison.Ordinal))
+        {
+            throw new ArgumentException("Directory paths are not allowed in document file names.", nameof(fileName));
+        }
+
+        var fullDirectoryPath = Path.GetFullPath(documentDirectory);
+        var destinationPath = Path.GetFullPath(Path.Combine(fullDirectoryPath, fileName));
+        var relativePath = Path.GetRelativePath(fullDirectoryPath, destinationPath);
+
+        if (Path.IsPathRooted(relativePath)
+            || relativePath.Equals("..", StringComparison.Ordinal)
+            || relativePath.StartsWith($"..{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+        {
+            throw new ArgumentException("Document file path must remain inside its storage directory.", nameof(fileName));
+        }
+
+        return destinationPath;
+    }
 }

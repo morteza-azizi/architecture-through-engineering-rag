@@ -49,6 +49,18 @@ public sealed class DocumentUploadTests : IClassFixture<RagWebApplicationFactory
     }
 
     [Fact]
+    public async Task UploadFileNameContainingPath_ReturnsBadRequestWithoutWritingFile()
+    {
+        using var content = CreateFileContent("../escape.md", "unsafe");
+
+        var response = await _client.PostAsync("/api/documents", content);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        Directory.GetFiles(_storagePath, "*", SearchOption.AllDirectories)
+            .Should().NotContain(path => path.EndsWith("escape.md", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task GetById_AfterUpload_ReturnsDocument()
     {
         using var uploadContent = CreateFileContent("readme.txt", "Hello RAG");

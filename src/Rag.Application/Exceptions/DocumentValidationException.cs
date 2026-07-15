@@ -10,3 +10,6 @@ public sealed class DocumentTooLargeException(string fileName, long sizeBytes, l
 
 public sealed class EmptyDocumentException()
     : DocumentValidationException("The uploaded file is empty.");
+
+public sealed class InvalidDocumentFileNameException(string fileName)
+    : DocumentValidationException($"File name '{fileName}' is invalid. Directory paths are not allowed.");
