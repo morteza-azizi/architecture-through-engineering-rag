@@ -31,6 +31,11 @@ public sealed class DocumentUploadService(
             throw new DocumentTooLargeException(fileName, sizeBytes, maxFileSizeBytes);
         }
 
+        if (!DocumentFormatPolicy.IsSafeFileName(fileName))
+        {
+            throw new InvalidDocumentFileNameException(fileName);
+        }
+
         if (!DocumentFormatPolicy.IsSupported(fileName))
         {
             throw new UnsupportedDocumentFormatException(fileName);
@@ -56,7 +61,27 @@ public sealed class DocumentUploadService(
             sizeBytes);
 
         await documentFileStore.StoreAsync(documentId, fileName, content, cancellationToken);
-        await documentRepository.AddAsync(document, cancellationToken);
+
+        try
+        {
+            await documentRepository.AddAsync(document, cancellationToken);
+        }
+        catch
+        {
+            try
+            {
+                await documentFileStore.DeleteAsync(documentId, CancellationToken.None);
+            }
+            catch (Exception cleanupException)
+            {
+                logger.LogError(
+                    cleanupException,
+                    "Failed to remove file for document {DocumentId} after metadata persistence failed",
+                    documentId);
+            }
+
+            throw;
+        }
 
         logger.LogInformation("Document {DocumentId} stored successfully", documentId);
 
