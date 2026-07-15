@@ -54,6 +54,8 @@ docs/
 - [Architecture](docs/Architecture.md)
 - [ADR 001: Clean Architecture layering](docs/ADR/001-clean-architecture-layering.md)
 
-## Development approach
+## Development Approach
 
-Features are delivered incrementally. Each slice includes architectural intent, trade-offs, implementation, and review before moving on.
+This repository uses modern AI-assisted engineering tools to accelerate implementation. Architecture, design decisions, reviews, and technical direction remain human-driven and are recorded in architecture documentation and ADRs.
+
+Development proceeds incrementally. Each slice includes architectural intent, trade-offs, implementation, and review before the next slice begins.
