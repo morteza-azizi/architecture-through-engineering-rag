@@ -1,0 +1,25 @@
+---
+description: Architecture and delivery constraints for the RAG reference implementation
+alwaysApply: true
+---
+
+# Architecture Revision 1
+
+- Optimize for the smallest production-worthy solution. Every abstraction, dependency, and project must satisfy a real requirement.
+- Do not add projects without a strong reason. Never add SharedKernel; defer Azure projects to Milestone 2.
+- Keep documentation limited to `README.md`, `docs/Architecture.md`, and significant ADRs under `docs/ADR/`.
+- Keep `Architecture.md` as one narrative covering overview, C1, C2, C3, and important flows.
+- Milestone 1 infrastructure is Ollama and Qdrant. Prefer mature infrastructure over custom replacements.
+- Defer Semantic Kernel unless it materially simplifies orchestration; record adoption in an ADR.
+- Use only `Microsoft.Extensions.Logging`; do not introduce Serilog.
+- Milestone 1 document support is Markdown and plain text. Defer PDF.
+- Application owns vendor-neutral interfaces; Infrastructure owns implementations.
+- Application must not depend on Azure, Ollama, Qdrant, Semantic Kernel, or other vendor libraries.
+- The LLM must never answer without relevant retrieved context. Return a meaningful refusal instead.
+
+For every architectural slice:
+
+1. Explain intent and trade-offs.
+2. Implement only that slice at production quality.
+3. Review and verify it.
+4. Stop for approval before starting the next slice.

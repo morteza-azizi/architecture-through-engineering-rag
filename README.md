@@ -45,13 +45,13 @@ tests/
   Rag.Api.IntegrationTests
 
 docs/
-  Architecture/   C4 model and system overview
+  Architecture.md C4 model, architectural flows, and system overview
   ADR/            Architectural decision records
 ```
 
 ## Documentation
 
-- [Architecture overview](docs/Architecture/overview.md)
+- [Architecture](docs/Architecture.md)
 - [ADR 001: Clean Architecture layering](docs/ADR/001-clean-architecture-layering.md)
 
 ## Development approach
