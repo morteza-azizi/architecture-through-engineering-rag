@@ -1,6 +1,9 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Rag.Api/Rag.Api.csproj" />
+    <Project Path="src/Rag.Application/Rag.Application.csproj" />
+    <Project Path="src/Rag.Domain/Rag.Domain.csproj" />
+    <Project Path="src/Rag.Infrastructure.Local/Rag.Infrastructure.Local.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Rag.Api.IntegrationTests/Rag.Api.IntegrationTests.csproj" />

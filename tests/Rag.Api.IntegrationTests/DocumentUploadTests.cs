@@ -49,6 +49,28 @@ public sealed class DocumentUploadTests : IClassFixture<RagWebApplicationFactory
     }
 
     [Fact]
+    public async Task UploadEmptyFile_ReturnsBadRequest()
+    {
+        using var content = CreateFileContent("empty.txt", string.Empty);
+
+        var response = await _client.PostAsync("/api/documents", content);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task UploadRequestExceedingConfiguredLimit_ReturnsPayloadTooLarge()
+    {
+        using var content = CreateFileContent(
+            "large.txt",
+            new byte[11 * 1024 * 1024]);
+
+        var response = await _client.PostAsync("/api/documents", content);
+
+        response.StatusCode.Should().Be(HttpStatusCode.RequestEntityTooLarge);
+    }
+
+    [Fact]
     public async Task UploadFileNameContainingPath_ReturnsBadRequestWithoutWritingFile()
     {
         using var content = CreateFileContent("../escape.md", "unsafe");
@@ -74,9 +96,20 @@ public sealed class DocumentUploadTests : IClassFixture<RagWebApplicationFactory
         document!.FileName.Should().Be("readme.txt");
     }
 
-    private static MultipartFormDataContent CreateFileContent(string fileName, string text)
+    [Fact]
+    public async Task GetById_UnknownDocument_ReturnsNotFound()
     {
-        var fileContent = new ByteArrayContent(System.Text.Encoding.UTF8.GetBytes(text));
+        var response = await _client.GetAsync($"/api/documents/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    private static MultipartFormDataContent CreateFileContent(string fileName, string text)
+        => CreateFileContent(fileName, System.Text.Encoding.UTF8.GetBytes(text));
+
+    private static MultipartFormDataContent CreateFileContent(string fileName, byte[] bytes)
+    {
+        var fileContent = new ByteArrayContent(bytes);
         fileContent.Headers.ContentType = new MediaTypeHeaderValue("text/plain");
 
         var form = new MultipartFormDataContent();
@@ -99,7 +132,7 @@ public sealed class RagWebApplicationFactory : WebApplicationFactory<Program>
             {
                 ["DocumentStorage:BasePath"] = StoragePath,
                 ["DocumentStorage:DatabasePath"] = Path.Combine(StoragePath, "rag.db"),
-                ["DocumentStorage:MaxFileSizeBytes"] = "10485760"
+                ["DocumentUpload:MaxFileSizeBytes"] = "10485760"
             });
         });
     }

@@ -65,6 +65,46 @@ public sealed class DocumentUploadServiceTests
     }
 
     [Fact]
+    public async Task UploadAsync_EmptyDocument_ThrowsBeforeWriting()
+    {
+        var repository = new FakeDocumentRepository();
+        var fileStore = new FakeDocumentFileStore();
+        var service = CreateService(repository, fileStore);
+
+        var act = () => service.UploadAsync(
+            new MemoryStream(),
+            "empty.txt",
+            "text/plain",
+            0,
+            1024,
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<EmptyDocumentException>();
+        repository.AddCalled.Should().BeFalse();
+        fileStore.StoreCalled.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task UploadAsync_DocumentExceedsLimit_ThrowsBeforeWriting()
+    {
+        var repository = new FakeDocumentRepository();
+        var fileStore = new FakeDocumentFileStore();
+        var service = CreateService(repository, fileStore);
+
+        var act = () => service.UploadAsync(
+            new MemoryStream("content"u8.ToArray()),
+            "large.txt",
+            "text/plain",
+            1025,
+            1024,
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<DocumentTooLargeException>();
+        repository.AddCalled.Should().BeFalse();
+        fileStore.StoreCalled.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task UploadAsync_UnsafeFileName_ThrowsBeforeWriting()
     {
         var repository = new FakeDocumentRepository();

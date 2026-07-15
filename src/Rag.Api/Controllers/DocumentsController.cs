@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Rag.Application.Abstractions;
 using Rag.Application.Documents;
 using Rag.Api.Contracts;
@@ -12,16 +13,16 @@ public sealed class DocumentsController : ControllerBase
 {
     private readonly DocumentUploadService _uploadService;
     private readonly IDocumentRepository _documentRepository;
-    private readonly IConfiguration _configuration;
+    private readonly DocumentUploadOptions _uploadOptions;
 
     public DocumentsController(
         DocumentUploadService uploadService,
         IDocumentRepository documentRepository,
-        IConfiguration configuration)
+        IOptions<DocumentUploadOptions> uploadOptions)
     {
         _uploadService = uploadService;
         _documentRepository = documentRepository;
-        _configuration = configuration;
+        _uploadOptions = uploadOptions.Value;
     }
 
     /// <summary>
@@ -45,16 +46,13 @@ public sealed class DocumentsController : ControllerBase
             });
         }
 
-        var maxFileSizeBytes = _configuration.GetValue<long?>("DocumentStorage:MaxFileSizeBytes")
-            ?? 10 * 1024 * 1024;
-
         await using var stream = file.OpenReadStream();
         var result = await _uploadService.UploadAsync(
             stream,
             file.FileName,
             string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType,
             file.Length,
-            maxFileSizeBytes,
+            _uploadOptions.MaxFileSizeBytes,
             cancellationToken);
 
         var response = DocumentMapping.ToResponse(result);
