@@ -24,6 +24,7 @@ artifacts/
 *.DotSettings.user
 
 ## IDE
+.cursor/
 .vs/
 .idea/
 *.swp
