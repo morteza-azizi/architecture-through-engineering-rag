@@ -77,16 +77,14 @@ Project references point inward. **Application never references Infrastructure.*
 
 ```text
 Api → Application, Infrastructure.Local     (composition root wires both)
-Infrastructure.Local → Infrastructure, Application
-Infrastructure → Application
+Infrastructure.Local → Application
 Application → Domain
 Domain → (nothing)
 ```
 
 - `Rag.Domain` references no project.
 - `Rag.Application` may reference only Domain.
-- `Rag.Infrastructure` may reference Application.
-- `Rag.Infrastructure.Local` may reference Infrastructure and Application.
+- `Rag.Infrastructure.Local` may reference Application.
 - `Rag.Api` may reference Application and Infrastructure.Local as the composition root.
 
 At runtime, use cases depend on ports such as `IDocumentRepository`. The API registers adapters such as `SqliteDocumentRepository` through dependency injection, without Application knowing the concrete type.
@@ -125,5 +123,6 @@ Semantic Kernel remains deferred unless it clearly simplifies orchestration.
 
 - Structured logging uses `Microsoft.Extensions.Logging`.
 - API errors use `ProblemDetails`.
-- Health checks are exposed at `/health`.
+- Readiness checks for SQLite and local storage are exposed at `/health`.
+- Process liveness is exposed at `/health/live`.
 - Swagger UI is enabled in Development.

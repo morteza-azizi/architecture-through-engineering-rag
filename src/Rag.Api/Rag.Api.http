@@ -1,6 +1,11 @@
 @Rag.Api_HostAddress = http://localhost:5202
 
-GET {{Rag.Api_HostAddress}}/weatherforecast/
+GET {{Rag.Api_HostAddress}}/health
+Accept: application/json
+
+###
+
+GET {{Rag.Api_HostAddress}}/health/live
 Accept: application/json
 
 ###

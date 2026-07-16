@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -20,7 +21,13 @@ public sealed class SqliteDocumentRepository : IDocumentRepository
     {
         var databasePath = Path.GetFullPath(options.Value.DatabasePath);
         Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
-        _connectionString = new SqliteConnectionStringBuilder { DataSource = databasePath }.ConnectionString;
+        _connectionString = new SqliteConnectionStringBuilder
+        {
+            DataSource = databasePath,
+            Mode = SqliteOpenMode.ReadWriteCreate,
+            Pooling = true,
+            DefaultTimeout = 5
+        }.ConnectionString;
         _logger = logger;
     }
 
@@ -40,7 +47,9 @@ public sealed class SqliteDocumentRepository : IDocumentRepository
         command.Parameters.AddWithValue("$fileName", document.FileName);
         command.Parameters.AddWithValue("$contentType", document.ContentType);
         command.Parameters.AddWithValue("$sizeBytes", document.SizeBytes);
-        command.Parameters.AddWithValue("$uploadedAt", document.UploadedAt.UtcDateTime);
+        command.Parameters.AddWithValue(
+            "$uploadedAt",
+            document.UploadedAt.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture));
         command.Parameters.AddWithValue("$status", document.Status.ToString());
 
         await command.ExecuteNonQueryAsync(cancellationToken);
@@ -113,6 +122,10 @@ public sealed class SqliteDocumentRepository : IDocumentRepository
 
             await using var command = connection.CreateCommand();
             command.CommandText = """
+                PRAGMA journal_mode = WAL;
+                PRAGMA synchronous = NORMAL;
+                PRAGMA busy_timeout = 5000;
+
                 CREATE TABLE IF NOT EXISTS Documents (
                     Id TEXT PRIMARY KEY,
                     FileName TEXT NOT NULL,
@@ -133,14 +146,25 @@ public sealed class SqliteDocumentRepository : IDocumentRepository
         }
     }
 
-    private static Document MapDocument(SqliteDataReader reader) =>
-        new()
+    private static Document MapDocument(SqliteDataReader reader)
+    {
+        var statusValue = reader.GetString(5);
+        if (!Enum.TryParse<DocumentStatus>(statusValue, ignoreCase: false, out var status))
+        {
+            throw new InvalidDataException($"Stored document status '{statusValue}' is invalid.");
+        }
+
+        return new Document
         {
             Id = Guid.Parse(reader.GetString(0)),
             FileName = reader.GetString(1),
             ContentType = reader.GetString(2),
             SizeBytes = reader.GetInt64(3),
-            UploadedAt = DateTimeOffset.Parse(reader.GetString(4)),
-            Status = Enum.Parse<DocumentStatus>(reader.GetString(5))
+            UploadedAt = DateTimeOffset.Parse(
+                reader.GetString(4),
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.RoundtripKind),
+            Status = status
         };
+    }
 }

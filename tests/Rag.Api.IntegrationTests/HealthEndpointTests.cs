@@ -1,14 +1,13 @@
 using System.Net;
 using FluentAssertions;
-using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Rag.Api.IntegrationTests;
 
-public sealed class HealthEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public sealed class HealthEndpointTests : IClassFixture<RagWebApplicationFactory>
 {
     private readonly HttpClient _client;
 
-    public HealthEndpointTests(WebApplicationFactory<Program> factory)
+    public HealthEndpointTests(RagWebApplicationFactory factory)
     {
         _client = factory.CreateClient();
     }
@@ -22,9 +21,9 @@ public sealed class HealthEndpointTests : IClassFixture<WebApplicationFactory<Pr
     }
 
     [Fact]
-    public async Task GetApiHealth_ReturnsOk()
+    public async Task GetLiveness_ReturnsOk()
     {
-        var response = await _client.GetAsync("/api/health");
+        var response = await _client.GetAsync("/health/live");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }

@@ -18,7 +18,8 @@ dotnet test
 dotnet run --project src/Rag.Api
 ```
 
-- Health check: `GET /health`
+- Readiness check: `GET /health`
+- Liveness check: `GET /health/live`
 - Swagger UI (Development): `https://localhost:<port>/swagger`
 - Upload document: `POST /api/documents` (multipart, `.txt` or `.md` only)
 - Get document metadata: `GET /api/documents/{id}`
@@ -35,7 +36,6 @@ docker compose up -d   # starts Qdrant (used in later slices)
 src/
   Rag.Domain              Business concepts
   Rag.Application         Use cases and abstractions (ports)
-  Rag.Infrastructure      Shared infrastructure contracts
   Rag.Infrastructure.Local  Milestone 1 local implementations
   Rag.Api                 HTTP API (composition root)
 
